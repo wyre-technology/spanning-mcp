@@ -1,0 +1,34 @@
+{
+  "manifest_version": "0.3",
+  "name": "spanning-mcp",
+  "display_name": "Spanning Cloud Backup MCP Server",
+  "version": "0.0.0",
+  "description": "MCP server for Spanning Cloud Backup - access M365/GWS/Salesforce backup status, queue restores, and review audit/license through AI assistants",
+  "long_description": "Provides AI assistants with structured access to your Spanning Cloud Backup tenant. List backed-up users across Microsoft 365, Google Workspace, or Salesforce, inspect services and backup history, queue restores with confirmation, monitor restore progress, and review the admin audit log and license usage through the Model Context Protocol.",
+  "author": { "name": "Wyre Technology", "url": "https://github.com/wyre-technology" },
+  "repository": { "type": "git", "url": "https://github.com/wyre-technology/spanning-mcp" },
+  "homepage": "https://github.com/wyre-technology/spanning-mcp",
+  "license": "Apache-2.0",
+  "keywords": ["spanning", "saas-backup", "m365", "google-workspace", "salesforce", "msp", "kaseya"],
+  "server": {
+    "type": "node",
+    "entry_point": "dist/index.js",
+    "mcp_config": {
+      "command": "node",
+      "args": ["${__dirname}/dist/index.js"],
+      "env": {
+        "SPANNING_PLATFORM": "${user_config.spanning_platform}",
+        "SPANNING_ADMIN_EMAIL": "${user_config.spanning_admin_email}",
+        "SPANNING_API_TOKEN": "${user_config.spanning_api_token}",
+        "MCP_TRANSPORT": "stdio"
+      }
+    }
+  },
+  "tools_generated": true,
+  "user_config": {
+    "spanning_platform": { "type": "string", "title": "Platform", "description": "Platform: 'm365', 'gws', or 'salesforce'", "sensitive": false, "required": true },
+    "spanning_admin_email": { "type": "string", "title": "Admin Email", "description": "Spanning admin account email", "sensitive": false, "required": true },
+    "spanning_api_token": { "type": "string", "title": "API Token", "description": "Spanning API token", "sensitive": true, "required": true }
+  },
+  "compatibility": { "platforms": ["darwin", "win32", "linux"], "runtimes": { "node": ">=18.0.0" }, "claude_desktop": ">=0.10.0" }
+}
