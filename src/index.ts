@@ -431,9 +431,11 @@ function createMcpServer(credentialOverrides?: SpanningCredentials): Server {
         case "spanning_list_audit_log": {
           const params = (args ?? {}) as { since?: string; until?: string };
           const range = await resolveDateRange(params);
+          // SDK uses from/to (matches Spanning's documented field names),
+          // not since/until.
           const audit = await client.audit.list({
-            since: range.sinceMs ? new Date(range.sinceMs).toISOString() : undefined,
-            until: range.untilMs ? new Date(range.untilMs).toISOString() : undefined,
+            from: range.sinceMs ? new Date(range.sinceMs).toISOString() : undefined,
+            to: range.untilMs ? new Date(range.untilMs).toISOString() : undefined,
           });
           const list: Array<{ createdAt?: number | string; timestamp?: number | string }> =
             Array.isArray((audit as { items?: unknown }).items)
