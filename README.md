@@ -14,6 +14,16 @@ tenants directly to AI assistants — list backed-up users, inspect covered
 services, browse backup history, queue restores, and audit admin activity and
 license usage.
 
+- **Interactive backup status card (MCP Apps, SEP-1865)**: `spanning_get_user`
+  renders as a read-only interactive card in MCP Apps hosts (Claude
+  Desktop/web) showing the user's backup status, license state, last backup,
+  and per-service coverage; neutral by default, brandable via
+  `window.__BRAND__` injection or `MCP_BRAND_*` env vars
+  (`MCP_BRAND_NAME`, `MCP_BRAND_LOGO_URL`, `MCP_BRAND_PRIMARY_COLOR`,
+  `MCP_BRAND_ACCENT_COLOR`, `MCP_BRAND_BG`, `MCP_BRAND_TEXT`). Plain-JSON
+  behavior is unchanged in other hosts. Rebuild the embedded card with
+  `npm run build:ui` after editing `ui/`.
+
 ## Tools
 
 | Tool | Purpose |

@@ -28,3 +28,6 @@ coverage/
 # Temporary files
 *.tmp
 *.temp
+
+# Vite-built card bundle (embedded via scripts/embed-ui.mjs)
+ui/dist/
