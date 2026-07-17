@@ -22,6 +22,9 @@ import {
 import { SpanningClient } from "@wyre-technology/node-spanning";
 import { setServerRef } from "./utils/server-ref.js";
 import { elicitConfirmation, elicitSelection, elicitText } from "./utils/elicitation.js";
+import { TOOL_DEFINITIONS } from "./tool.definitions.js";
+import { registerResourceHandlers } from "./resources.js";
+import { buildBackupStatusCard } from "./card.builder.js";
 
 // ---------------------------------------------------------------------------
 // Credentials
@@ -96,124 +99,16 @@ function createMcpServer(credentialOverrides?: SpanningCredentials): Server {
     {
       capabilities: {
         tools: {},
+        resources: {},
       },
     }
   );
 
   setServerRef(server);
+  registerResourceHandlers(server);
 
   server.setRequestHandler(ListToolsRequestSchema, async () => {
-    return {
-      tools: [
-        {
-          name: "spanning_list_users",
-          description: "List all backed-up users in the Spanning organization.",
-          inputSchema: {
-            type: "object",
-            properties: {
-              limit: { type: "number", description: "Max results (default: 100)", default: 100 },
-            },
-          },
-        },
-        {
-          name: "spanning_get_user",
-          description: "Get detail for a single backed-up user by ID.",
-          inputSchema: {
-            type: "object",
-            properties: {
-              userId: { type: "string", description: "User identifier" },
-            },
-            required: ["userId"],
-          },
-        },
-        {
-          name: "spanning_list_services",
-          description:
-            "List the backup services covered for a user (mail, drive, calendar, contacts, etc.).",
-          inputSchema: {
-            type: "object",
-            properties: {
-              userId: { type: "string", description: "User identifier" },
-            },
-            required: ["userId"],
-          },
-        },
-        {
-          name: "spanning_list_backups",
-          description: "List backup runs for a user + service.",
-          inputSchema: {
-            type: "object",
-            properties: {
-              userId: { type: "string", description: "User identifier" },
-              service: {
-                type: "string",
-                description:
-                  "Service name (e.g. mail, drive, calendar, contacts, sites, salesforce)",
-              },
-            },
-            required: ["userId", "service"],
-          },
-        },
-        {
-          name: "spanning_queue_restore",
-          description:
-            "Queue a restore for a user + service. DESTRUCTIVE: writes data back into the target tenant. The destination user must have appropriate Microsoft Graph / Google API / Salesforce permissions for the restore to land. Requires explicit confirmation.",
-          inputSchema: {
-            type: "object",
-            properties: {
-              userId: { type: "string", description: "User identifier to restore to" },
-              service: { type: "string", description: "Service to restore (mail, drive, ...)" },
-              items: {
-                type: "array",
-                description:
-                  "Items (folder/message/file IDs) to restore. Pass an empty array to restore the entire service.",
-                items: { type: "string" },
-              },
-            },
-            required: ["userId", "service", "items"],
-          },
-        },
-        {
-          name: "spanning_get_restore_status",
-          description: "Check the status / progress of a queued restore.",
-          inputSchema: {
-            type: "object",
-            properties: {
-              restoreId: { type: "string", description: "Restore job identifier" },
-            },
-            required: ["restoreId"],
-          },
-        },
-        {
-          name: "spanning_list_audit_log",
-          description:
-            "List admin audit log entries. If date range is omitted, the user will be prompted.",
-          inputSchema: {
-            type: "object",
-            properties: {
-              since: { type: "string", description: "ISO 8601 start datetime (optional)" },
-              until: { type: "string", description: "ISO 8601 end datetime (optional)" },
-            },
-          },
-        },
-        {
-          name: "spanning_get_license_usage",
-          description: "Get license usage / seat counts vs purchased.",
-          inputSchema: {
-            type: "object",
-            properties: {},
-          },
-        },
-        {
-          name: "spanning_status",
-          description: "Server status / health — confirms credentials and platform are configured.",
-          inputSchema: {
-            type: "object",
-            properties: {},
-          },
-        },
-      ],
-    };
+    return { tools: TOOL_DEFINITIONS };
   });
 
   // -------------------------------------------------------------------------
@@ -377,7 +272,13 @@ function createMcpServer(credentialOverrides?: SpanningCredentials): Server {
         case "spanning_get_user": {
           const { userId } = args as { userId: string };
           const user = await client.users.get(userId);
-          return { content: [{ type: "text", text: JSON.stringify(user ?? {}, null, 2) }] };
+          const payload: Record<string, unknown> = { ...(user ?? {}) };
+          // MCP Apps: attach the normalized card payload the ui:// backup
+          // status card renders from. Best-effort — a null card just means no
+          // UI surface; the model-visible payload is otherwise unchanged.
+          const card = await buildBackupStatusCard(payload, creds.platform, client);
+          if (card) payload._card = card;
+          return { content: [{ type: "text", text: JSON.stringify(payload, null, 2) }] };
         }
 
         case "spanning_list_services": {
