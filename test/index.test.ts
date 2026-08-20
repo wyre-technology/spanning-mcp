@@ -1,66 +1,75 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect } from "vitest";
+import { TOOL_DEFINITIONS } from "../src/tool.definitions.js";
 
-describe('Spanning Cloud Backup MCP Server', () => {
-  describe('Tool Definitions', () => {
-    const expectedTools = [
-      'spanning_list_users',
-      'spanning_get_user',
-      'spanning_list_services',
-      'spanning_list_backups',
-      'spanning_queue_restore',
-      'spanning_get_restore_status',
-      'spanning_list_audit_log',
-      'spanning_get_license_usage',
-      'spanning_status',
-    ];
-
-    it('should define all 9 tools', () => {
-      expect(expectedTools).toHaveLength(9);
+describe("Spanning Cloud Backup MCP Server", () => {
+  describe("Tool Definitions", () => {
+    it("defines exactly the 9 expected tools", () => {
+      const names = TOOL_DEFINITIONS.map((t) => t.name);
+      expect(names).toEqual([
+        "spanning_list_users",
+        "spanning_get_user",
+        "spanning_list_services",
+        "spanning_list_backups",
+        "spanning_queue_restore",
+        "spanning_get_restore_status",
+        "spanning_list_audit_log",
+        "spanning_get_license_usage",
+        "spanning_status",
+      ]);
     });
 
-    it('should include user tools', () => {
-      expect(expectedTools).toContain('spanning_list_users');
-      expect(expectedTools).toContain('spanning_get_user');
+    it("every tool has a non-empty description", () => {
+      for (const tool of TOOL_DEFINITIONS) {
+        expect(tool.description, `${tool.name} description`).toBeTruthy();
+      }
     });
 
-    it('should include service + backup tools', () => {
-      expect(expectedTools).toContain('spanning_list_services');
-      expect(expectedTools).toContain('spanning_list_backups');
+    it("spanning_get_user requires userId", () => {
+      const tool = TOOL_DEFINITIONS.find((t) => t.name === "spanning_get_user");
+      expect(tool?.inputSchema.required).toEqual(["userId"]);
     });
 
-    it('should include restore tools', () => {
-      expect(expectedTools).toContain('spanning_queue_restore');
-      expect(expectedTools).toContain('spanning_get_restore_status');
+    it("spanning_list_services requires userId", () => {
+      const tool = TOOL_DEFINITIONS.find((t) => t.name === "spanning_list_services");
+      expect(tool?.inputSchema.required).toEqual(["userId"]);
     });
 
-    it('should include audit + license + status tools', () => {
-      expect(expectedTools).toContain('spanning_list_audit_log');
-      expect(expectedTools).toContain('spanning_get_license_usage');
-      expect(expectedTools).toContain('spanning_status');
+    it("spanning_list_backups requires userId and service", () => {
+      const tool = TOOL_DEFINITIONS.find((t) => t.name === "spanning_list_backups");
+      expect(tool?.inputSchema.required).toEqual(["userId", "service"]);
+    });
+
+    it("spanning_queue_restore requires userId, service, and items", () => {
+      const tool = TOOL_DEFINITIONS.find((t) => t.name === "spanning_queue_restore");
+      expect(tool?.inputSchema.required).toEqual(["userId", "service", "items"]);
+    });
+
+    it("spanning_get_restore_status requires restoreId", () => {
+      const tool = TOOL_DEFINITIONS.find((t) => t.name === "spanning_get_restore_status");
+      expect(tool?.inputSchema.required).toEqual(["restoreId"]);
+    });
+
+    it("spanning_list_audit_log, spanning_get_license_usage, and spanning_status take no required fields", () => {
+      for (const name of ["spanning_list_audit_log", "spanning_get_license_usage", "spanning_status"]) {
+        const tool = TOOL_DEFINITIONS.find((t) => t.name === name);
+        expect(tool?.inputSchema.required ?? [], name).toEqual([]);
+      }
+    });
+
+    it("only spanning_get_user advertises MCP Apps UI metadata", () => {
+      const withMeta = TOOL_DEFINITIONS.filter((t) => t._meta);
+      expect(withMeta.map((t) => t.name)).toEqual(["spanning_get_user"]);
     });
   });
 
-  describe('Platform validation', () => {
-    const validPlatforms = ['m365', 'gws', 'salesforce'];
+  describe("Platform validation", () => {
+    // Mirrors index.ts's VALID_PLATFORMS — kept as a plain literal check since
+    // index.ts itself can't be imported in tests (it boots a real transport
+    // at module-import time via main()).
+    const validPlatforms = ["m365", "gws", "salesforce"];
 
-    it('should support m365, gws, salesforce', () => {
-      expect(validPlatforms).toContain('m365');
-      expect(validPlatforms).toContain('gws');
-      expect(validPlatforms).toContain('salesforce');
-    });
-  });
-
-  describe('Credentials', () => {
-    it('should require platform, admin email, and API token', () => {
-      const required = ['SPANNING_PLATFORM', 'SPANNING_ADMIN_EMAIL', 'SPANNING_API_TOKEN'];
-      expect(required).toHaveLength(3);
-    });
-  });
-
-  describe('Server Configuration', () => {
-    it('should define server with correct name', () => {
-      const config = { name: 'spanning-mcp', version: '0.0.0' };
-      expect(config.name).toBe('spanning-mcp');
+    it("should support m365, gws, salesforce", () => {
+      expect(validPlatforms).toEqual(["m365", "gws", "salesforce"]);
     });
   });
 });
