@@ -47,7 +47,7 @@
   "homepage": "https://github.com/wyre-technology/spanning-mcp#readme",
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.30.0",
-    "@wyre-technology/node-spanning": "^1.0.2"
+    "@wyre-technology/node-spanning": "^1.0.3"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
